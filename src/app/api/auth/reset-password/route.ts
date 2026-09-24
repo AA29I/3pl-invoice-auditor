@@ -32,8 +32,9 @@ export async function POST(req: Request) {
           expiresAt,
         },
       });
-
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://3pl-invoice-auditor.vercel.app";
+      const host = req.headers.get("host") || "3pl-invoice-auditor.vercel.app";
+      const protocol = host.includes("localhost") ? "http" : "https";
+      const appUrl = `${protocol}://${host}`;
       const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
 
       let emailSent = false;
