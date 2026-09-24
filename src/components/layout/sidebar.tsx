@@ -26,6 +26,7 @@ export function Sidebar({
     { name: "3PL Providers & Rates", href: "/providers" },
     { name: "Invoice Audits", href: "/audits" },
     { name: "Upload & Audit CSV", href: "/audits/new" },
+    { name: "Documentation & Specs", href: "/docs" },
     { name: "Workspace Settings", href: "/settings" },
     { name: "Subscription & Billing", href: "/settings/billing" },
   ];

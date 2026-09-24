@@ -12,11 +12,11 @@ export function MarketingHeaderClient({ isAuthenticated }: MarketingHeaderClient
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Methodology", href: "/how-it-works" },
+    { name: "Platform", href: "/how-it-works" },
     { name: "Pricing", href: "/pricing" },
-    { name: "Common Discrepancies", href: "/3pl-billing-errors" },
-    { name: "Fee Calculator", href: "/pick-and-pack-calculator" },
-    { name: "Documentation", href: "/faq" },
+    { name: "Discrepancies", href: "/3pl-billing-errors" },
+    { name: "Rate Calculator", href: "/pick-and-pack-calculator" },
+    { name: "Documentation", href: "/docs" },
   ];
 
   return (

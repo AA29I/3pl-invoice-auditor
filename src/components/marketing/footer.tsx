@@ -25,6 +25,11 @@ export function MarketingFooter() {
           </h4>
           <ul className="space-y-2 text-xs">
             <li>
+              <Link href="/docs" className="hover:text-[#FBFAF6] transition text-[#E0BC68] font-medium">
+                Official Documentation &amp; Specs
+              </Link>
+            </li>
+            <li>
               <Link href="/how-it-works" className="hover:text-[#FBFAF6] transition">
                 Audit Methodology
               </Link>

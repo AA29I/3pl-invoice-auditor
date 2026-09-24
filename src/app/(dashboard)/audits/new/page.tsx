@@ -390,7 +390,7 @@ export default function NewAuditPage() {
                         className="text-[#090908] bg-[#E0BC68] hover:bg-[#d6af57] px-2 py-0.5 rounded font-semibold"
                         title="Load RDX Sports Enterprise dataset with Tiered Weights (oz/lbs/kg) & Custom Columns (SKU, PO, Dimensions)"
                       >
-                        ⚡ Load RDX Sports Test CSV
+                        ⚡ Load Enterprise Tiered Dataset (RDX Sports)
                       </button>
                     </div>
                   </div>
