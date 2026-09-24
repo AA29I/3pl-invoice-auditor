@@ -1,0 +1,14 @@
+Date,Reference,Description,Quantity,Unit Rate,Total Amount
+2026-08-01,ORD-9821,Pick & Pack Base,1,3.45,3.45
+2026-08-01,ORD-9821,Additional Item Pick,2,0.65,1.30
+2026-08-02,ORD-9822,Pick & Pack Base,1,2.85,2.85
+2026-08-02,ORD-9823,Pick & Pack Base,1,2.85,2.85
+2026-08-02,ORD-9823,Pick & Pack Base,1,2.85,2.85
+2026-08-03,ORD-9824,Pick & Pack Base,1,3.25,3.25
+2026-08-04,PAL-001,Monthly Storage Pallet,12,24.00,288.00
+2026-08-05,RCV-401,Inbound Receiving Pallet,4,18.00,72.00
+2026-08-06,RET-109,Return Processing,1,4.50,4.50
+2026-08-07,MISC-99,Unscheduled Peak Warehouse Surcharge,1,150.00,150.00
+2026-08-10,ORD-9825,Pick & Pack Base,1,2.85,2.85
+2026-08-10,ORD-9825,Custom Gift Insert Wrap,1,1.50,1.50
+2026-08-15,TECH-08,Monthly Account Software Fee,1,250.00,250.00

@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: three_pl_auditor_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: three_pl_auditor
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d three_pl_auditor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: three_pl_auditor_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/three_pl_auditor?schema=public"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      JWT_SECRET: "docker-jwt-super-secret-key-3pl-auditor-minimum-32"
+      LEMON_SQUEEZY_API_KEY: "test_key"
+      LEMON_SQUEEZY_STORE_ID: "12345"
+      LEMON_SQUEEZY_WEBHOOK_SECRET: "test_secret"
+      LEMON_SQUEEZY_PRO_VARIANT_ID: "test_variant"
+
+volumes:
+  pgdata:

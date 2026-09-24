@@ -1,0 +1,239 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships   WorkspaceMember[]
+  sessions      Session[]
+  resetTokens   PasswordResetToken[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Workspace {
+  id             String            @id @default(cuid())
+  name           String
+  slug           String            @unique
+  devModeEnabled Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  members        WorkspaceMember[]
+  subscription   Subscription?
+  providers      Provider[]
+  invoices       Invoice[]
+  webhookEvents  WebhookEvent[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String    @default("MEMBER")
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  workspaceId        String    @unique
+  provider           String    @default("lemon-squeezy")
+  customerId         String?
+  subscriptionId     String?   @unique
+  orderId            String?
+  variantId          String?
+  tier               String    @default("FREE")
+  status             String    @default("INACTIVE")
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  portalUrl          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  workspaceId String?
+  eventId     String    @unique
+  eventType   String
+  payload     String
+  processedAt DateTime  @default(now())
+
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+}
+
+model Provider {
+  id           String      @id @default(cuid())
+  workspaceId  String
+  name         String
+  contactEmail String?
+  currency     String      @default("USD")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rateCards    RateCard[]
+  invoices     Invoice[]
+
+  @@unique([workspaceId, name])
+}
+
+model RateCard {
+  id                String        @id @default(cuid())
+  providerId        String
+  name              String
+  rateCardType      String        @default("STANDARD") // STANDARD, TIERED_WEIGHT, MULTI_CARRIER, HYBRID
+  defaultWeightUnit String        @default("LB") // OZ, LB, KG, G
+  effectiveFrom     DateTime
+  effectiveTo       DateTime?
+  currency          String        @default("USD")
+  notes             String?
+  customOptions     String?       // JSON serialized custom rate card options & fields
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  provider          Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  fees              RateCardFee[]
+  invoices          Invoice[]
+}
+
+model RateCardFee {
+  id                    String   @id @default(cuid())
+  rateCardId           String
+  category             String   // BASE_PICK_PACK, ADDITIONAL_ITEM, STORAGE_PALLET, SHIPPING_CARRIER, WEIGHT_TIERED_PICK, etc.
+  description          String
+  unitType             String   // order, item, pallet/month, carton, hour, tier, etc.
+  rateCents            Int      // Money in minor units (integer cents)
+  feeType              String   @default("FLAT") // FLAT, TIERED_WEIGHT, SURCHARGE
+  shipper              String?  // e.g. "Royal Mail", "DPD", "FedEx", "UPS", "DHL", "USPS", "Evri", "Freight"
+  serviceLevel         String?  // e.g. "Tracked 48", "Ground", "Next Day", "Standard"
+  weightUnit           String?  // "OZ", "LB", "KG", "G"
+  minWeight            Float?   // e.g. 0.0
+  maxWeight            Float?   // e.g. 1.0 (or 16 oz)
+  zone                 String?  // e.g. "Zone 1-2", "All"
+  incrementalRateCents Int?     // e.g. +$0.50 per unit over maxWeight
+  incrementalWeightStep Float?  // e.g. 1.0 (per 1 lb or per 1 kg)
+  customFields         String?  // Serialized JSON for client-defined custom options and metadata
+  createdAt            DateTime @default(now())
+
+  rateCard             RateCard @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
+
+  @@index([rateCardId, category])
+  @@index([rateCardId, feeType])
+  @@index([rateCardId, shipper])
+}
+
+model Invoice {
+  id                        String       @id @default(cuid())
+  workspaceId               String
+  providerId                String
+  rateCardId                String?
+  invoiceNumber             String
+  invoiceDate               DateTime
+  billingPeriodStart        DateTime
+  billingPeriodEnd          DateTime
+  fileName                  String
+  fileSize                  Int
+  totalLines                Int          @default(0)
+  totalBilledCents          Int          @default(0)
+  potentialDiscrepancyCents Int          @default(0)
+  confirmedDiscrepancyCents Int          @default(0)
+  status                    String       @default("PENDING")
+  isDevMode                 Boolean      @default(false)
+  customFields              String?
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  workspace                 Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider                  Provider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  rateCard                  RateCard?    @relation(fields: [rateCardId], references: [id], onDelete: SetNull)
+  lines                     InvoiceLine[]
+  flags                     AuditFlag[]
+
+  @@unique([workspaceId, providerId, invoiceNumber])
+}
+
+model InvoiceLine {
+  id               String      @id @default(cuid())
+  invoiceId        String
+  lineNumber       Int
+  serviceDate      DateTime?
+  orderReference   String?
+  rawCategory      String
+  matchedCategory  String?
+  billedQuantity   Float       @default(1.0)
+  billedRateCents  Int
+  billedTotalCents Int
+  billedWeight     Float?
+  weightUnit       String?     // OZ, LB, KG, G
+  carrier          String?     // e.g. "DPD", "FedEx", "Royal Mail"
+  zone             String?     // e.g. "Zone 2"
+  customFields     String?
+  rawData          String
+  createdAt        DateTime    @default(now())
+
+  invoice          Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  flags            AuditFlag[]
+
+  @@index([invoiceId, orderReference])
+}
+
+model AuditFlag {
+  id                   String      @id @default(cuid())
+  invoiceId            String
+  invoiceLineId        String
+  ruleType             String
+  status               String      @default("AWAITING_CLARIFICATION")
+  userNote             String?
+  
+  expectedRateCents    Int?
+  expectedTotalCents   Int?
+  billedTotalCents     Int
+  differenceCents      Int
+  calculationBreakdown String
+  
+  resolvedAt           DateTime?
+  resolvedByUserId     String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  invoice              Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceLine          InvoiceLine @relation(fields: [invoiceLineId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, status])
+  @@index([invoiceId, ruleType])
+}
