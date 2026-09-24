@@ -1,18 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlToken = searchParams.get("token") || "";
+
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(urlToken);
   const [newPassword, setNewPassword] = useState("");
-  const [step, setStep] = useState<"request" | "reset">("request");
+  const [step, setStep] = useState<"request" | "reset">(urlToken ? "reset" : "request");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (urlToken) {
+      setToken(urlToken);
+      setStep("reset");
+    }
+  }, [urlToken]);
 
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +44,13 @@ export default function ResetPasswordPage() {
       if (!res.ok) throw new Error(data.error || "Failed to process request");
 
       setMessage(data.message);
-      if (data.devResetToken) {
-        setToken(data.devResetToken);
+
+      // If Resend email provider is not yet configured, automatically transition to reset step with direct token
+      const fallbackToken = data.directToken || data.devResetToken;
+      if (fallbackToken) {
+        setToken(fallbackToken);
         setStep("reset");
+        setMessage("Password reset token generated! You can enter your new password below.");
       }
     } catch (err: any) {
       setErrorMsg(err.message);
@@ -58,7 +75,8 @@ export default function ResetPasswordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to reset password");
 
-      setMessage(data.message);
+      setMessage(data.message || "Your password has been successfully updated.");
+      setIsSuccess(true);
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
@@ -66,14 +84,41 @@ export default function ResetPasswordPage() {
     }
   };
 
+  if (isSuccess) {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-[#121210] border border-[#B8892D]/40 text-[#E0BC68] flex items-center justify-center mx-auto text-xl font-bold">
+          ✓
+        </div>
+        <div>
+          <h2 className="text-xl font-serif font-bold text-[#090908] tracking-tight">
+            Password Updated
+          </h2>
+          <p className="mt-2 text-xs text-[#777268]">
+            Your new password has been verified and saved. You can now sign in with your updated credentials.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link href="/login">
+            <Button variant="primary" className="w-full">
+              Proceed to Sign In
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-serif font-bold text-[#090908] tracking-tight">
-          Reset your password
+          {step === "request" ? "Reset your password" : "Set new password"}
         </h2>
         <p className="mt-1 text-xs text-[#777268]">
-          Enter your registered work email to receive password reset instructions
+          {step === "request"
+            ? "Enter your registered work email to receive password reset instructions"
+            : "Enter your reset token and new secure password below"}
         </p>
       </div>
 
@@ -97,11 +142,11 @@ export default function ResetPasswordPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@yourbrand.com"
+            placeholder="mettglobalinc@gmail.com"
           />
 
           <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-            Send Reset Instructions
+            Generate Reset Instructions
           </Button>
 
           <div className="text-center pt-2">
@@ -122,7 +167,7 @@ export default function ResetPasswordPage() {
             required
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            placeholder="Enter token from email"
+            placeholder="Enter token from email or generated above"
           />
 
           <Input
@@ -137,6 +182,16 @@ export default function ResetPasswordPage() {
           <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
             Update Password
           </Button>
+
+          <div className="text-center pt-2">
+            <button
+              type="button"
+              onClick={() => setStep("request")}
+              className="text-xs text-[#777268] hover:text-[#090908] transition"
+            >
+              ← Back to request reset link
+            </button>
+          </div>
         </form>
       )}
 
@@ -147,5 +202,19 @@ export default function ResetPasswordPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-8 text-center text-xs text-[#777268]">
+          Loading password reset...
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

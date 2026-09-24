@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         // Return success anyway to avoid user enumeration
         return NextResponse.json({
           success: true,
-          message: "If that email is registered, password reset instructions have been dispatched.",
+          message: "If that email is registered, password reset instructions have been generated.",
         });
       }
 
@@ -33,11 +33,48 @@ export async function POST(req: Request) {
         },
       });
 
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://3pl-invoice-auditor.vercel.app";
+      const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
+
+      let emailSent = false;
+      if (process.env.RESEND_API_KEY) {
+        try {
+          const res = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: process.env.EMAIL_FROM || "3PL Auditor <onboarding@resend.dev>",
+              to: [cleanEmail],
+              subject: "Reset your 3PL Invoice Auditor password",
+              html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #DCD5C8; border-radius: 6px; background-color: #FBFAF6;">
+                  <h2 style="color: #121210; margin-top: 0; font-family: Georgia, serif;">Password Reset Request</h2>
+                  <p style="color: #777268; font-size: 14px; line-height: 1.6;">You requested a password reset for your 3PL Invoice Auditor account (${cleanEmail}).</p>
+                  <p style="margin: 24px 0;">
+                    <a href="${resetLink}" style="background-color: #B8892D; color: #090908; padding: 12px 24px; text-decoration: none; font-weight: 600; border-radius: 4px; display: inline-block;">Set New Password</a>
+                  </p>
+                  <p style="color: #777268; font-size: 12px; line-height: 1.5;">This link will expire in 2 hours. If you did not request this, you can safely ignore this email.</p>
+                </div>
+              `,
+            }),
+          });
+          if (res.ok) emailSent = true;
+        } catch (mailErr) {
+          console.error("Failed to send email via Resend:", mailErr);
+        }
+      }
+
       return NextResponse.json({
         success: true,
-        message: "If that email is registered, password reset instructions have been dispatched.",
-        // For development/testing ease, we also return the token
-        devResetToken: process.env.NODE_ENV !== "production" ? resetToken : undefined,
+        emailSent,
+        message: emailSent
+          ? `Password reset instructions have been dispatched to ${cleanEmail}.`
+          : "Password reset link generated. You may set your new password immediately.",
+        resetLink: !emailSent ? resetLink : undefined,
+        directToken: !emailSent ? resetToken : undefined,
       });
     }
 

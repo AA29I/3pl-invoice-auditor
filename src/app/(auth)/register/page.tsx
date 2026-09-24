@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -58,6 +59,19 @@ export default function RegisterPage() {
           {errorMessage}
         </div>
       )}
+
+      {/* Google / Gmail Sign Up Option */}
+      <div className="space-y-4">
+        <GoogleSignInButton mode="signup" />
+
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-[#DCD5C8]"></div>
+          <span className="flex-shrink mx-3 text-[11px] text-[#777268] uppercase tracking-wider">
+            or sign up with work email
+          </span>
+          <div className="flex-grow border-t border-[#DCD5C8]"></div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
