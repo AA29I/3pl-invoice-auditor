@@ -99,8 +99,19 @@ export async function POST(req: Request) {
     return response;
   } catch (error: any) {
     console.error("Registration error:", error);
+    const isDbError =
+      !process.env.DATABASE_URL ||
+      process.env.DATABASE_URL.includes("placeholder") ||
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("connect") ||
+      error?.code === "P1001";
+
     return NextResponse.json(
-      { error: "Failed to create account. Please try again." },
+      {
+        error: isDbError
+          ? "Database connection failed. Please ensure DATABASE_URL is configured in your Vercel project settings."
+          : "Failed to create account. Please try again.",
+      },
       { status: 500 }
     );
   }

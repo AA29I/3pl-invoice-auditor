@@ -64,8 +64,19 @@ export async function POST(req: Request) {
     return response;
   } catch (error: any) {
     console.error("Login error:", error);
+    const isDbError =
+      !process.env.DATABASE_URL ||
+      process.env.DATABASE_URL.includes("placeholder") ||
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("connect") ||
+      error?.code === "P1001";
+
     return NextResponse.json(
-      { error: "An unexpected error occurred during sign in." },
+      {
+        error: isDbError
+          ? "Database connection failed. Please ensure DATABASE_URL is configured in your Vercel project settings."
+          : "An unexpected error occurred during sign in.",
+      },
       { status: 500 }
     );
   }
