@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.js",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
+    "prisma:generate:prod": "prisma generate --schema=prisma/schema.postgresql.prisma",
     "prisma:push": "prisma db push",
+    "prisma:push:prod": "prisma db push --schema=prisma/schema.postgresql.prisma",
     "prisma:seed": "node -r ts-node/register prisma/seed.ts",
     "seed": "tsx prisma/seed.ts"
   },
